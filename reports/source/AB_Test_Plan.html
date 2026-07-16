@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>프로필 강화 온보딩 넛지 A/B 테스트 설계안</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+    color: #1f2937;
+    line-height: 1.65;
+    font-size: 13px;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 22px;
+    border-bottom: 3px solid #2b6cb0;
+    padding-bottom: 10px;
+    margin-top: 0;
+    color: #1a365d;
+  }
+  h2 {
+    font-size: 16px;
+    color: #2b6cb0;
+    border-left: 5px solid #2b6cb0;
+    padding-left: 10px;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 14px;
+    color: #2d3748;
+    margin-top: 20px;
+    page-break-after: avoid;
+  }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  strong { color: #1a365d; }
+  code {
+    background: #f1f5f9;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 14px 0;
+    font-size: 12px;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #cbd5e0;
+    padding: 7px 10px;
+    text-align: left;
+  }
+  th {
+    background: #2b6cb0;
+    color: white;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: #f7fafc; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+  .meta { color: #718096; font-size: 12px; margin-bottom: 20px; }
+
+  figure {
+    margin: 16px 0 20px 0;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+  figure img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 3px;
+  }
+  figcaption {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: #4a5568;
+    line-height: 1.5;
+    text-align: left;
+  }
+  figcaption b { color: #1a365d; }
+</style>
+</head>
+<body>
+<h1>프로필 강화 온보딩 넛지 A/B 테스트 설계안</h1>
+<p><code>00_Main_Report.md</code>의 결론(프로필 강화 → 다회 지원)은 관측 데이터에서 나온 <strong>상관관계</strong>다. 실제로 온보딩에서 강화 행동을 유도했을 때 다회 지원이 늘어나는지는 무작위 실험으로만 확인할 수 있다. 이 문서는 그 실험의 설계안이다.</p>
+<h2>1. 배경 및 가설</h2>
+<p><code>05_CoreUser_Report.ipynb</code>(11.2절)와 <code>00_Main_Report.md</code>(3절)에서 확인된 사실은 다음과 같다.</p>
+<ul>
+<li>프로필 강화 행동(포트폴리오 등록, 경력검증)을 한 유저는 평균 지원 횟수가 유의미하게 높다(0개 6.06회 → 2개 11.93회).</li>
+<li>강화 행동 유저의 85%는 <strong>첫 지원 이전에</strong> 이 행동을 먼저 수행한다.</li>
+<li>지원 횟수 세그먼트(라이트/노멀/코어)가 올라갈수록 강화 행동 보유율(46.0% → 58.8% → 71.9%)과 강화 깊이가 함께 계단식으로 증가한다.</li>
+</ul>
+<p>이 관계가 인과적이라면, 가입 직후 온보딩에서 강화 행동을 유도하는 넛지를 보여줬을 때 다회 지원 전환율이 올라가야 한다. 다만 이 관계는 &quot;원래 구직 의지가 강한 유저가 강화도 하고 지원도 많이 한다&quot;는 선택 효과(selection effect)로도 동일하게 설명된다 — 즉 지금까지의 분석만으로는 어느 쪽인지 구분할 수 없다.</p>
+<p><strong>가설</strong>: 가입 완료 직후 온보딩 화면에서 포트폴리오·경력검증 작성을 유도하는 넛지를 노출하면, 노출받지 않은 대조군보다 이후 지원 활동(강화 행동 완료율, 다회 지원 전환율)이 유의미하게 높아진다.</p>
+<h2>2. 실험 설계</h2>
+<table>
+<thead>
+<tr>
+  <th>항목</th>
+  <th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>분석/무작위 배정 단위</td>
+  <td>가입 완료(<code>signup/step3/done</code>, response_code 200) 시점에 도달한 유저</td>
+</tr>
+<tr>
+  <td>대조군 (A)</td>
+  <td>기존 온보딩 화면 그대로</td>
+</tr>
+<tr>
+  <td>실험군 (B)</td>
+  <td>온보딩 완료 화면 또는 첫 로그인 홈에 &quot;포트폴리오 등록·경력검증으로 지원 성공률 높이기&quot; 형태의 CTA 노출 + 미완료 시 D+3 리마인드 알림 1회</td>
+</tr>
+<tr>
+  <td>배정 비율</td>
+  <td>50 : 50</td>
+</tr>
+</tbody>
+</table>
+<p>세그먼트(라이트/노멀/코어)는 실험 배정 기준으로 쓸 수 없다 — 그 세그먼트 자체가 지원 횟수라는 <strong>실험 이후에 관측되는 결과</strong>로 정의되기 때문이다. 따라서 신규 가입자 전체를 무작위 배정하고, 결과를 분석할 때 사후적으로 세그먼트를 나눠 본다.</p>
+<h2>3. 지표 정의</h2>
+<table>
+<thead>
+<tr>
+  <th>구분</th>
+  <th>지표</th>
+  <th>관측 시점</th>
+  <th>비고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Leading (1차 판정)</td>
+  <td>가입 후 7일 이내 강화 행동(포트폴리오 또는 경력검증) 완료율</td>
+  <td>D+7</td>
+  <td>빠르게 결론 낼 수 있는 선행 지표</td>
+</tr>
+<tr>
+  <td>Lagging (핵심 검증)</td>
+  <td>가입 후 30일 / 90일 시점 지원 횟수, 라이트(1회)→노멀(2회 이상) 전환율</td>
+  <td>D+30, D+90</td>
+  <td>가설이 실제로 검증되는 지표</td>
+</tr>
+<tr>
+  <td>가드레일</td>
+  <td>가입 완료율(퍼널 이탈 여부), 첫 지원까지 소요 시간</td>
+  <td>실험 기간 내내</td>
+  <td>넛지가 온보딩을 방해해 이탈을 늘리지 않는지 확인</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Leading 지표 baseline 관련 주의사항</strong>: 지금 분석에서 확인한 강화 행동 보유율(46.0%/58.8%/71.9%)은 모두 &quot;최종 지원 횟수로 사후 분류된&quot; 세그먼트 기준값이라, 실험 전 baseline으로 그대로 쓰면 순환논리가 된다. 실험을 시작하기 전, <strong>전체 신규 가입자 중 7일 내 강화 행동 완료율</strong>을 대조군만으로 먼저 1~2주 측정해 실제 baseline을 확정해야 한다. 아래 4절의 45%는 이 값이 나오기 전까지 쓰는 잠정 추정치(라이트 유저 강화 보유율)다.</p>
+<h2>4. 표본 크기 및 예상 기간</h2>
+<p>Leading 지표(7일 내 강화 행동 완료율) 기준, 유의수준 95%·검정력 80%로 최소 탐지 효과(MDE)별 필요 표본 수는 다음과 같다(잠정 baseline 45% 기준).</p>
+<table>
+<thead>
+<tr>
+  <th>MDE</th>
+  <th>대조군 목표</th>
+  <th>그룹당 표본 수</th>
+  <th>총 표본 수</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>+7%p</td>
+  <td>45% → 52%</td>
+  <td>801명</td>
+  <td>1,602명</td>
+</tr>
+<tr>
+  <td>+10%p</td>
+  <td>45% → 55%</td>
+  <td>393명</td>
+  <td>786명</td>
+</tr>
+<tr>
+  <td>+15%p</td>
+  <td>45% → 60%</td>
+  <td>174명</td>
+  <td>348명</td>
+</tr>
+<tr>
+  <td>+20%p</td>
+  <td>45% → 65%</td>
+  <td>98명</td>
+  <td>196명</td>
+</tr>
+</tbody>
+</table>
+<p><strong>신규 가입 속도가 실험 기간을 결정하는 병목이다.</strong> <code>01_Acquisition_Report.ipynb</code> 캐시(<code>signup_lead_time.pkl</code>) 기준 2023년 하반기 월별 가입 완료자는 9월 128명, 10월 107명, 11월 95명으로 — 월 100명 안팎까지 줄어든 상태다(12월 18명은 데이터 수집 기간 절단으로 인한 착시이므로 제외). 이 속도(월 100명, 그룹당 월 50명)를 기준으로 하면:</p>
+<table>
+<thead>
+<tr>
+  <th>MDE</th>
+  <th>예상 소요 기간</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>+10%p</td>
+  <td>약 7.9개월</td>
+</tr>
+<tr>
+  <td>+15%p</td>
+  <td>약 3.5개월</td>
+</tr>
+<tr>
+  <td>+20%p</td>
+  <td>약 2개월</td>
+</tr>
+</tbody>
+</table>
+<p><strong>권장안</strong>: +15%p MDE, 약 3.5개월 — 정밀도와 실행 가능한 기간의 균형점. 다만 01번 보고서에서 이미 확인했듯 신규 가입 자체가 장기 감소 추세라, 이 기간이 더 늘어날 수 있음을 감안해야 한다. 더 빠른 판단이 필요하면 +20%p로 낮춰 약 2개월 안에 1차 결론을 낼 수 있다.</p>
+<h2>5. 리스크 및 한계</h2>
+<ul>
+<li><strong>선택 효과와 처치 효과를 구분하는 것이 이 실험의 핵심 목적</strong>이다 — 만약 넛지 효과가 작거나 없다면, 지금까지의 상관관계는 대부분 선택 효과였다는 뜻이 된다. 이 경우도 유의미한 결론이다.</li>
+<li>신규 가입 감소 추세가 계속되면 표본 확보가 더 늦어질 수 있다. 이 경우 MDE를 낮추거나(선택지 축소), 기존 유저 중 아직 강화 행동을 하지 않은 유저를 대상으로 한 별도의 리텐션 넛지 실험으로 표본을 보강하는 방안을 검토할 수 있다.</li>
+<li>넛지 문구·배치에 따라 효과가 달라질 수 있어, 이 설계안은 단일 변형(B) 기준이며 실제 실행 시 문구 A/B는 별도로 필요할 수 있다.</li>
+</ul>
+<h2>6. 다음 단계</h2>
+<p>이 설계안은 분석 결과를 바탕으로 한 실험 초안이며, 실제 실행에는 온보딩 화면 개발(엔지니어링), 넛지 문구 확정(프로덕트), 실험 트래킹 이벤트 정의가 추가로 필요하다.</p>
+
+</body>
+</html>

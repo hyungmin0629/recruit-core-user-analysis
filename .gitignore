@@ -1,0 +1,66 @@
+# 데이터 파일 (보수적으로 전부 제외 — 캐시/산출물 구분 없이)
+*.parquet
+*.pkl
+*.pickle
+*.csv
+*.sql
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+*.xlsx
+*.xls
+*.json.gz
+*.tsv
+*.feather
+*.h5
+
+# 원본 데이터·파생 캐시 폴더 (확장자와 무관하게 통째로 제외)
+archive_raw/
+notebooks/_cache/*
+!notebooks/_cache/README.md
+outputs/dashboard_source/
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+
+# 환경 변수 / 시크릿
+.env
+.env.*
+!.env.example
+
+# 로그
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 에디터
+.vscode/
+.idea/
+*.swp
+
+# 압축 파일
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
